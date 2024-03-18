@@ -1,5 +1,6 @@
 import { LogSeverityLevel } from "../domain/entities/log.entity";
 import { CheckService } from "../domain/use-cases/checks/check-server";
+import { CheckServiceMultiple } from "../domain/use-cases/checks/check-server-multiple";
 import { SendEmailLogs } from "../domain/use-cases/email/send-email-logs";
 import { FileSystemDataSource } from "../infrastructure/datasources/datasources/file-system.datasource";
 import { MongoDataSource } from "../infrastructure/datasources/datasources/mongo.datasource";
@@ -8,9 +9,15 @@ import { LogRepositoryImpl } from "../infrastructure/repository/log.repository.i
 import { CronService } from "./cron/cron-service";
 import { EmailService } from "./email/email.service";
 
-const logRepository = new LogRepositoryImpl( 
-    // new FileSystemDataSource() 
-    // new MongoDataSource()
+const fsLogRepository = new LogRepositoryImpl( 
+    new FileSystemDataSource() 
+)
+
+const mongoLogRepository = new LogRepositoryImpl( 
+    new MongoDataSource()
+)
+
+const postgresLogRepository = new LogRepositoryImpl( 
     new PostgresDatasource()
 )
 const emailService = new EmailService();
@@ -26,15 +33,15 @@ export class Server {
         // const emailService = new EmailService(fileSystemLogRepository);
         // emailService.sendEmailWithFileSystemLogs(['lferreyrac04@hotmail.com', 'leonardojesus2004@hotmail.com'])
 
-        const logs = await logRepository.getLog(LogSeverityLevel.low);
-        console.log(logs);
+        // const logs = await logRepository.getLog(LogSeverityLevel.low);
+        // console.log(logs);
         // Cron creation
         CronService.createJob(
             '*/5 * * * * *',
             () => {
                 const url = 'http://google.com'
-                new CheckService(
-                    logRepository,
+                new CheckServiceMultiple(
+                    [ fsLogRepository, mongoLogRepository, postgresLogRepository ],
                     () => console.log(`${url} is ok`),
                     ( error ) => console.log( error )
                 ).execute(url);
