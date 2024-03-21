@@ -3,5 +3,9 @@ dist/
 logs/
 /mongo
 /postgres
-
+/mongo-test
+/postgres-test
+/test
+/coverage
 .env
+.env.test
